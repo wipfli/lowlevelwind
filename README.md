@@ -15,7 +15,7 @@ Jupyter notebooks showcasing how to access and process numerical weather predict
 
 The following notebooks demonstrate typical workflows:
 
-- [01_retrieve_proces_precip.ipynb](01_retrieve_process_precip.ipynb)
+- [01_retrieve_process_precip.ipynb](01_retrieve_process_precip.ipynb)
 
 ## 🚀 Getting Started
 
