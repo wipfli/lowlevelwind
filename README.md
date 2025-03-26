@@ -1,33 +1,36 @@
-<h1 align="center">OGD Model Data Access and Processing</h1> 
-
-<br />
+<h1 align="center">OGD Model Data Access & Processing</h1>
+<h3 align="center">Jupyter Notebook Examples Using MeteoSwiss NWP Data</h3>
 
 <p align="center">
-  <img src="images/logo_mch.png" alt="MCH Logo" width="150" style="margin-right: 20px;" />
-  <img src="images/logo_opendata.jpeg" alt="Open Data Logo" width="150" />
+  <img src="images/logo_mch.png" alt="MCH Logo" width="130" />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+  <img src="images/logo_opendata.jpeg" alt="Open Data Logo" width="130" />
 </p>
 
-Jupyter notebooks showcasing how to access and process numerical weather prediction (NWP) data from MeteoSwiss using the [meteodata-lab](https://github.com/MeteoSwiss/meteodata-lab) library.
+This repository provides Jupyter notebook examples for accessing and processing numerical weather prediction (NWP) model data from **MeteoSwiss**, released through Switzerland’s **Open Government Data (OGD)** initiative.
 
 ---
 
 ## 📓 Example Notebooks
 
-The following notebooks demonstrate typical workflows:
-
-- [01_retrieve_process_precip.ipynb](01_retrieve_process_precip.ipynb)
+- [**01_retrieve_process_precip.ipynb**](01_retrieve_process_precip.ipynb) - Retrieve, process, and visualize ensemble precipitation forecasts from the ICON model.
 
 ## 🚀 Getting Started
 
-### 📦 Install Dependencies
+### Install Dependencies
 
 Clone the repository and install all required packages using:
 
-#### 1. Install eccodes using conda
-`bash install_eccodes.sh`
+ 1. **Install ecCodes using conda**
+    ```bash
+    bash install_eccodes.sh
+    ```
 
-#### 2. Install Python dependencies using Poetry
-`poetry install`
+2. **Install Python dependencies using Poetry**
+    ```bash
+    poetry install
+    ```
 
 ## 📚 Related Documentation
 
