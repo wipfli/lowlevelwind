@@ -4,7 +4,6 @@
 <p align="center">
   <img src="images/logo_mch.png" alt="MCH Logo" width="130" />
   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-
   <img src="images/logo_opendata.jpeg" alt="Open Data Logo" width="130" />
 </p>
 
@@ -31,6 +30,15 @@ Clone the repository and install all required packages using:
     ```bash
     poetry install
     ```
+
+3. **Install the Jupyter kernel**  
+    Activate the Poetry environment and install the current environment as a Jupyter kernel:
+    ```bash
+    poetry shell
+    poetry run python -m ipykernel install --user --name=notebooks-nwp-env --display-name "Python (notebooks-nwp-env)"
+    ```
+4. **Use the Kernel in Jupyter**   
+    After launching Jupyter, select the custom kernel by navigating to Kernel → Change Kernel → Python (notebooks-nwp-env) in the notebook interface.
 
 ## 📚 Related Documentation
 
