@@ -36,7 +36,7 @@ else
 fi
 
 echo " Setting Python $PYTHON_VERSION as global version..."
-pyenv global $PYTHON_VERSION
+pyenv local $PYTHON_VERSION
 
 echo "Done! Python version now:"
 python --version
