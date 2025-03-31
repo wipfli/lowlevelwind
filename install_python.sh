@@ -35,7 +35,7 @@ else
     echo "Python $PYTHON_VERSION already installed in pyenv."
 fi
 
-echo " Setting Python $PYTHON_VERSION as global version..."
+echo " Setting Python $PYTHON_VERSION as local version..."
 pyenv local $PYTHON_VERSION
 
 echo "Done! Python version now:"
