@@ -2,7 +2,7 @@
 
 set -e  # Stop on error
 
-PYTHON_VERSION="3.11.7"
+PYTHON_VERSION="3.11"
 
 echo " Installing pyenv..."
 if [ ! -d "$HOME/.pyenv" ]; then

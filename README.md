@@ -32,7 +32,7 @@ Clone the repository and install all required packages using:
 
  2. **Install ecCodes using conda**
     > ⚠️ **Temporary Setup Notice**  
-    > From **ecCodes 2.37.0** onwards, this step won't be needed as the Python wheel will include the binary automatically. This change is expected to take effect soon.
+    > From **ecCodes 2.37.0** onwards, this step won't be needed as the Python wheel will include the binary for the ecCodes library. This change is expected to take effect soon.
 
 
     ```bash
@@ -52,6 +52,7 @@ Clone the repository and install all required packages using:
     ```
 
 4. **Install Python dependencies using Poetry**
+    Make sure to be at the root of the project's folder.
     ```bash
     poetry install
     ```
@@ -60,7 +61,7 @@ Clone the repository and install all required packages using:
     Activate the Poetry environment and register it as a Jupyter kernel so it can be used within notebooks:
     ```bash
     poetry shell
-    poetry run python -m ipykernel install --user --name=notebooks-nwp-env --display-name "Python (notebooks-nwp-env)"
+    python -m ipykernel install --user --name=notebooks-nwp-env --display-name "Python (notebooks-nwp-env)"
     ```
 
 6. **Open and run notebooks**  
@@ -70,7 +71,7 @@ Clone the repository and install all required packages using:
 
     Make sure you have the following VS Code extensions installed:
 
-    - Python
+    - Python (by Microsoft)
 
     - Jupyter (by Microsoft)
 
@@ -78,7 +79,7 @@ Clone the repository and install all required packages using:
 
     1. Open the project folder in VS Code.
 
-    2. Open the .ipynb notebook file.
+    2. Open a jupyter notebook file, for example 01_retrieve_process_precip.ipynb.
 
     3. When prompted (or from the top-right kernel picker), select the kernel: Python (notebooks-nwp-env)
     
@@ -89,13 +90,13 @@ Clone the repository and install all required packages using:
 
     If you don't have VS Code or prefer using JupyterLab:
 
-    1. Install JupyterLab inside the Poetry environment (if not already installed):
+    1. Install JupyterLab (if not already installed):
         ```bash
-        poetry run pip install jupyterlab
+        pip install jupyterlab
         ```
     2. Launch JupyterLab:
         ```bash
-        poetry run juypter lab
+        jupyter lab
         ```
     3. Open your notebook and select the kernel **Python (notebooks-nwp-env)** from the kernel menu.
 
