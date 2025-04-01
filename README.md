@@ -89,11 +89,11 @@ Clone the repository and install all required packages using:
     **Option B: Using JupyterLab**
 
     If you don't have VS Code or prefer using JupyterLab:
-
-    1. Install JupyterLab (if not already installed):
+    1. Install JupyterLab using `pipx`:
         ```bash
-        pip install jupyterlab
+        pipx install jupyterlab
         ```
+        Don’t have `pipx` yet? Get it here: [https://pipx.pypa.io/stable/installation/](https://pipx.pypa.io/stable/installation/)
     2. Launch JupyterLab:
         ```bash
         jupyter lab
