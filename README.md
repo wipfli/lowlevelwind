@@ -25,7 +25,7 @@ Clone the repository and install all required packages using:
     ```bash
     python3 --version
     ```
-    If Python 3.11 is not installed, run the following script to install it with `pyenv`:
+    If Python 3.11 is not installed, run the following script to install it with `pyenv`. `Git` is required for the script. Make sure `Git` is installed. If needed, you can install it by following the instructions [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
     ```bash
     bash install_python.sh
     ```
