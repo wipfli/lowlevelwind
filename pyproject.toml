@@ -8,7 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "~3.11"
-meteodatalab = { url = "https://github.com/MeteoSwiss/meteodata-lab/archive/b1ed2c2d3b0095365e209c8ddef9ec48928933a9.zip" }
+meteodata-lab = { url = "https://github.com/MeteoSwiss/meteodata-lab/archive/b3cfc6144705725fbe81b2f29fb4cfd4f5d71d3b.zip" }
 earthkit-plots = "^0.2.8"
 ipykernel = "^6.29.5"
 rasterio = "^1.4.3"
