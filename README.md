@@ -13,14 +13,14 @@ This repository provides Jupyter notebook examples for accessing and processing 
 
 ## 📓 Example Notebooks
 
-- [**01_retrieve_process_precip.ipynb**](01_retrieve_process_precip.ipynb) - Retrieve, process, and visualize ensemble precipitation forecasts from the ICON model.
+- [**01_retrieve_process_precip.ipynb**](01_retrieve_process_precip.ipynb) - Retrieve, process, and visualize deterministic precipitation forecasts from the ICON model.
 
 ## 🚀 Getting Started
 
 ### Install Dependencies
 
 Clone the repository and install all required packages using:
- 1. **Ensure Python 3.11 is installed**  
+ 1. **Ensure Python 3.11 is installed**
   This project requires **Python 3.11**. You can check your current version with:
     ```bash
     python3 --version
@@ -31,7 +31,7 @@ Clone the repository and install all required packages using:
     ```
 
  2. **Install ecCodes using conda**
-    > ⚠️ **Temporary Setup Notice**  
+    > ⚠️ **Temporary Setup Notice**
     > From **ecCodes 2.37.0** onwards, this step won't be needed as the Python wheel will include the binary for the ecCodes library. This change is expected to take effect soon.
 
 
@@ -39,7 +39,7 @@ Clone the repository and install all required packages using:
     bash install_eccodes.sh
     ```
 
- 3. **Install Poetry**  
+ 3. **Install Poetry**
   Poetry is used to manage Python dependencies and environments. Install it using the official installer:
     ```bash
     curl -sSL https://install.python-poetry.org | python3 -
@@ -57,14 +57,14 @@ Clone the repository and install all required packages using:
     poetry install
     ```
 
-5. **Install the Jupyter kernel**  
+5. **Install the Jupyter kernel**
     Activate the Poetry environment and register it as a Jupyter kernel so it can be used within notebooks:
     ```bash
     poetry shell
     python -m ipykernel install --user --name=notebooks-nwp-env --display-name "Python (notebooks-nwp-env)"
     ```
 
-6. **Open and run notebooks**  
+6. **Open and run notebooks**
     You can run the notebooks using **Visual Studio Code** or **JupyterLab** — whichever you prefer.
 
     **Option A: Using Visual Studio Code**
@@ -82,7 +82,7 @@ Clone the repository and install all required packages using:
     2. Open a jupyter notebook file, for example 01_retrieve_process_precip.ipynb.
 
     3. When prompted (or from the top-right kernel picker), select the kernel: Python (notebooks-nwp-env)
-    
+
     > 💡 If you don't see the environment, restart VS Code after running the kernel installation step.
     ---
 
@@ -109,4 +109,3 @@ For more context on the available numerical weather forecast data and how it’s
 
 ## 💬 Feedbacks
 Feel free to open issues to suggest improvements or contribute new examples!
-
