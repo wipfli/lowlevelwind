@@ -19,27 +19,14 @@ This repository provides Jupyter notebook examples for accessing and processing 
 
 ### Install Dependencies
 
-Clone the repository and install all required packages using:
- 1. **Ensure Python 3.11 is installed**
+Clone the repository and install all required packages:
+1. **Ensure Python 3.11 is installed** <br>
   This project requires **Python 3.11**. You can check your current version with:
     ```bash
     python3 --version
     ```
-    If Python 3.11 is not installed, run the following script to install it with `pyenv`. `Git` is required for the script. Make sure `Git` is installed. If needed, you can install it by following the instructions [here](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git).
-    ```bash
-    bash install_python.sh
-    ```
 
- 2. **Install ecCodes using conda**
-    > ⚠️ **Temporary Setup Notice**
-    > From **ecCodes 2.37.0** onwards, this step won't be needed as the Python wheel will include the binary for the ecCodes library. This change is expected to take effect soon.
-
-
-    ```bash
-    bash install_eccodes.sh
-    ```
-
- 3. **Install Poetry**
+2. **Install Poetry** <br>
   Poetry is used to manage Python dependencies and environments. Install it using the official installer:
     ```bash
     curl -sSL https://install.python-poetry.org | python3 -
@@ -51,20 +38,20 @@ Clone the repository and install all required packages using:
     poetry --version
     ```
 
-4. **Install Python dependencies using Poetry**
+3. **Install Python dependencies using Poetry** <br>
     Make sure to be at the root of the project's folder.
     ```bash
     poetry install
     ```
 
-5. **Install the Jupyter kernel**
+4. **Install the Jupyter kernel** <br>
     Activate the Poetry environment and register it as a Jupyter kernel so it can be used within notebooks:
     ```bash
     poetry shell
     python -m ipykernel install --user --name=notebooks-nwp-env --display-name "Python (notebooks-nwp-env)"
     ```
 
-6. **Open and run notebooks**
+5. **Open and run notebooks** <br>
     You can run the notebooks using **Visual Studio Code** or **JupyterLab** — whichever you prefer.
 
     **Option A: Using Visual Studio Code**
@@ -105,7 +92,7 @@ Clone the repository and install all required packages using:
 
 For more context on the available numerical weather forecast data and how it’s structured, see:
 
-  🔗 [MeteoSwiss Forecast Data Documentation](https://github.com/MeteoSwiss/opendata-forecast-data/blob/main/README.md#2-numerical-weather-forecasting-model-data)
+  🔗 [MeteoSwiss Forecast Data Documentation](https://opendatadocs.meteoswiss.ch/e-forecast-data/e2-e3-numerical-weather-forecasting-model)
 
 ## 💬 Feedbacks
 Feel free to open issues to suggest improvements or contribute new examples!
