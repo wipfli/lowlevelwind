@@ -8,7 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "~3.11"
-meteodata-lab = "~0.3"
+meteodata-lab = {extras = ["regrid"], version = "~0.3"}
 earthkit-plots = "^0.3"
 ipykernel = "^6.29.5"
 rasterio = "^1.4.3"

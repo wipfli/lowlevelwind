@@ -1728,7 +1728,10 @@ eccodes = ">=2.38,<2.39"
 eccodes-cosmo-resources-python = ">=2.38,<2.39"
 numpy = ">=1.26.4,<2.0.0"
 pydantic = "*"
+pyproj = {version = ">=3.6.1,<4.0.0", optional = true, markers = "extra == \"regrid\""}
 pyyaml = ">=6.0.1,<7.0.0"
+rasterio = {version = ">=1.3.10,<2.0.0", optional = true, markers = "extra == \"regrid\""}
+scipy = {version = ">=1.13,<2.0", optional = true, markers = "extra == \"regrid\""}
 setuptools = "*"
 xarray = ">=2024"
 
@@ -1755,13 +1758,13 @@ tqdm = "*"
 
 [[package]]
 name = "narwhals"
-version = "1.34.1"
+version = "1.35.0"
 description = "Extremely lightweight compatibility layer between dataframe libraries"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "narwhals-1.34.1-py3-none-any.whl", hash = "sha256:aee49a30d1624371ad975ede2bab16cd125ab5df0fd185e2f4757e103b074d27"},
-    {file = "narwhals-1.34.1.tar.gz", hash = "sha256:8941a08cf62f39ae67be945090b20a19c51fb9048ac909cad2f95aee23f9e302"},
+    {file = "narwhals-1.35.0-py3-none-any.whl", hash = "sha256:7562af132fa3f8aaaf34dc96d7ec95bdca29d1c795e8fcf14e01edf1d32122bc"},
+    {file = "narwhals-1.35.0.tar.gz", hash = "sha256:07477d18487fbc940243b69818a177ed7119b737910a8a254fb67688b48a7c96"},
 ]
 
 [package.extras]
@@ -2294,13 +2297,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "prompt-toolkit"
-version = "3.0.50"
+version = "3.0.51"
 description = "Library for building powerful interactive command lines in Python"
 optional = false
-python-versions = ">=3.8.0"
+python-versions = ">=3.8"
 files = [
-    {file = "prompt_toolkit-3.0.50-py3-none-any.whl", hash = "sha256:9b6427eb19e479d98acff65196a307c555eb567989e6d88ebbb1b509d9779198"},
-    {file = "prompt_toolkit-3.0.50.tar.gz", hash = "sha256:544748f3860a2623ca5cd6d2795e7a14f3d0e1c3c9728359013f79877fc89bab"},
+    {file = "prompt_toolkit-3.0.51-py3-none-any.whl", hash = "sha256:52742911fde84e2d423e2f9a4cf1de7d7ac4e51958f648d9540e0fb8db077b07"},
+    {file = "prompt_toolkit-3.0.51.tar.gz", hash = "sha256:931a162e3b27fc90c86f1b48bb1fb2c528c2761475e57c9c06de13311c7b54ed"},
 ]
 
 [package.dependencies]
@@ -3406,4 +3409,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "64f2c89001ec0e63f12a8b9bd52cd943cfff0b829b78ec64698b2808d7b94855"
+content-hash = "bf2527d5e590ea63f5a6c8c44c6f20a8cb958b375efe639207618b4c335f1592"
