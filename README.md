@@ -26,14 +26,14 @@ Clone the repository and install all required packages:
     python3 --version
     ```
 
-2. #### Install Poetry
+2. #### Install Poetry 1.8.1
     Poetry is used to manage Python dependencies and environments. Install it using the official installer:
       ```bash
-      curl -sSL https://install.python-poetry.org | python3 -
+      curl -sSL https://install.python-poetry.org | python3 - --version 1.8.1
       ```
       Make sure poetry is available in your shell (you may need to restart your terminal or follow the post-install instructions shown after installation).
 
-      Check the version to confirm it's installed:
+      Verify that Poetry is installed and check the version:
       ```bash
       poetry --version
       ```
