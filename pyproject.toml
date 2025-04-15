@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "opendata-nwp-demos"
 version = "0.1.0"
-description = ""
-authors = ["ninaburg <nina.burg@hotmail.com>"]
+description = "Notebook examples using model data for the Open Government Data initiative"
+authors = ["MeteoSwiss"]
 readme = "README.md"
+package-mode = false
 
 
 [tool.poetry.dependencies]
