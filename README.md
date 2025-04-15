@@ -20,38 +20,38 @@ This repository provides Jupyter notebook examples for accessing and processing 
 ### Install Dependencies
 
 Clone the repository and install all required packages:
-1. **Ensure Python 3.11 is installed** <br>
-  This project requires **Python 3.11**. You can check your current version with:
+1. #### Ensure Python 3.11 is installed
+    This project requires **Python 3.11**. You can check your current version with:
     ```bash
     python3 --version
     ```
 
-2. **Install Poetry** <br>
-  Poetry is used to manage Python dependencies and environments. Install it using the official installer:
-    ```bash
-    curl -sSL https://install.python-poetry.org | python3 -
-    ```
-    Make sure poetry is available in your shell (you may need to restart your terminal or follow the post-install instructions shown after installation).
+2. #### Install Poetry
+    Poetry is used to manage Python dependencies and environments. Install it using the official installer:
+      ```bash
+      curl -sSL https://install.python-poetry.org | python3 -
+      ```
+      Make sure poetry is available in your shell (you may need to restart your terminal or follow the post-install instructions shown after installation).
 
-    Check the version to confirm it's installed:
-    ```bash
-    poetry --version
-    ```
+      Check the version to confirm it's installed:
+      ```bash
+      poetry --version
+      ```
 
-3. **Install Python dependencies using Poetry** <br>
+3. #### Install Python dependencies using Poetry
     Make sure to be at the root of the project's folder.
     ```bash
     poetry install
     ```
 
-4. **Install the Jupyter kernel** <br>
+4. #### Install the Jupyter kernel
     Activate the Poetry environment and register it as a Jupyter kernel so it can be used within notebooks:
     ```bash
     poetry shell
     python -m ipykernel install --user --name=notebooks-nwp-env --display-name "Python (notebooks-nwp-env)"
     ```
 
-5. **Open and run notebooks** <br>
+5. #### Open and run notebooks
     You can run the notebooks using **Visual Studio Code** or **JupyterLab** — whichever you prefer.
 
     **Option A: Using Visual Studio Code**
