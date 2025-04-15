@@ -1,15 +1,16 @@
 [tool.poetry]
 name = "opendata-nwp-demos"
 version = "0.1.0"
-description = ""
-authors = ["ninaburg <nina.burg@hotmail.com>"]
+description = "Notebook examples using model data for the Open Government Data initiative"
+authors = ["MeteoSwiss"]
 readme = "README.md"
+package-mode = false
 
 
 [tool.poetry.dependencies]
 python = "~3.11"
-meteodata-lab = { url = "https://github.com/MeteoSwiss/meteodata-lab/archive/b3cfc6144705725fbe81b2f29fb4cfd4f5d71d3b.zip" }
-earthkit-plots = "^0.2.8"
+meteodata-lab = {extras = ["regrid"], version = "~0.3"}
+earthkit-plots = "^0.3"
 ipykernel = "^6.29.5"
 rasterio = "^1.4.3"
 
