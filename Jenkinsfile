@@ -48,7 +48,6 @@ pipeline {
             // Send email if the execution fails
             emailext(subject: "Notebooks OGD ${env.JOB_BASE_NAME}",
                 attachLog: true,
-                attachmentsPattern: 'generatedFile.txt',
                 body: """
 The pipeline which checks the execution of the notebooks failed:
 ${env.BUILD_URL}
