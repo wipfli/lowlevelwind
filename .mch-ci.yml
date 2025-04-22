@@ -6,4 +6,5 @@ default:
           commands: >
             poetry install --with test &&
             poetry run python -m ipykernel install --user --name=notebooks-nwp-env --display-name "Python (notebooks-nwp-env)" &&
-            poetry run python check_notebooks.py
+            poetry run python check_notebooks.py ;
+            jupyter kernelspec remove -f notebooks-nwp-env
