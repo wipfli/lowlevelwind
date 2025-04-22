@@ -4,10 +4,6 @@ from pathlib import Path
 from nbconvert.preprocessors import ExecutePreprocessor, CellExecutionError
 import nbformat
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s')
-
-
 KERNEL_NAME = "notebooks-nwp-env"
 ROOT_DIR = Path(__file__).resolve().parent
 NOTEBOOK_DIRS = [ROOT_DIR, ROOT_DIR / "clean_notebooks"]
@@ -44,4 +40,7 @@ def main():
         logger.info("All notebooks ran successfully.")
 
 if __name__ == "__main__":
+    logger = logging.getLogger(__name__)
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(message)s')
+
     main()
