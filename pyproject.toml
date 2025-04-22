@@ -14,6 +14,16 @@ earthkit-plots = "^0.3"
 ipykernel = "^6.29.5"
 rasterio = "^1.4.3"
 
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+nbconvert = "^7.16.6"
+nbformat = "^5.10.4"
+
+
+[tool.poetry.group.nbformat.dependencies]
+nbformat = "^5.10.4"
 
 [build-system]
 requires = ["poetry-core"]
