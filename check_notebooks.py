@@ -1,4 +1,5 @@
 import logging
+import sys
 from pathlib import Path
 from nbconvert.preprocessors import ExecutePreprocessor, CellExecutionError
 import nbformat
@@ -11,7 +12,7 @@ KERNEL_NAME = "notebooks-nwp-env"
 ROOT_DIR = Path(__file__).resolve().parent
 NOTEBOOK_DIRS = [ROOT_DIR, ROOT_DIR / "clean_notebooks"]
 
-def run_notebook(notebook_path):
+def run_notebook(notebook_path: Path):
     with open(notebook_path) as f:
         nb = nbformat.read(f, as_version=4)
 
@@ -23,13 +24,24 @@ def run_notebook(notebook_path):
         ep.preprocess(nb, {'metadata': {'path': notebook_path.parent}})
         logger.info(f"Notebook ran successfully: {notebook_path}")
     except CellExecutionError as e:
-        logger.error(f"Error in notebook: {notebook_path}")
-        logger.exception(e)
+        logger.exception(f"Error in notebook: {notebook_path}")
+        raise
 
 def main():
+    had_errors = False
+
     for directory in NOTEBOOK_DIRS:
         for nb_path in directory.glob("*.ipynb"):
-            run_notebook(nb_path)
+            try:
+                run_notebook(nb_path)
+            except Exception:
+                had_errors = True
+
+    if had_errors:
+        logger.error("Some notebooks failed.")
+        sys.exit(1)
+    else:
+        logger.info("All notebooks ran successfully.")
 
 if __name__ == "__main__":
     main()
