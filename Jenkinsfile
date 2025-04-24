@@ -2,6 +2,10 @@ pipeline {
     agent {
         label 'redhat'
     }
+    triggers {
+        // Run the job daily at 1:30 AM
+        cron('30 1 * * *')
+    }
     environment {
         PATH = "$workspace/.venv-mchbuild/bin:$PATH"
         HTTP_PROXY = 'http://proxy.meteoswiss.ch:8080'
