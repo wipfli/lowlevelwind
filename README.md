@@ -32,42 +32,46 @@ Clone the repository and install all required packages. This project requires **
     poetry run python -m ipykernel install --user --name=notebooks-nwp-env --display-name "Python (notebooks-nwp-env)"
     ```
 
-3. #### Open and run notebooks
-    You can run the notebooks using **Visual Studio Code** or **JupyterLab** — whichever you prefer.
+### Open and Run Notebooks
 
-    **Option A: Using Visual Studio Code**
+You can run the notebooks using **Visual Studio Code** or **JupyterLab** — whichever you prefer.
 
-    Make sure you have the following VS Code extensions installed:
+#### Option A: Using Visual Studio Code
 
-    - Python (by Microsoft)
+Make sure you have the following VS Code extensions installed:
 
-    - Jupyter (by Microsoft)
+- Python (by Microsoft)
+- Jupyter (by Microsoft)
 
-    Once installed:
+Once installed:
 
-    1. Open the project folder in VS Code.
+1. Open the project folder in VS Code.
+2. Open a Jupyter notebook file, for example `01_retrieve_process_precip.ipynb`.
+3. When prompted (or from the top-right kernel picker), select the kernel: **Python (notebooks-nwp-env)**.
 
-    2. Open a jupyter notebook file, for example 01_retrieve_process_precip.ipynb.
+> 💡 If you don't see the environment, restart VS Code after running the kernel installation step.
 
-    3. When prompted (or from the top-right kernel picker), select the kernel: Python (notebooks-nwp-env)
+---
 
-    > 💡 If you don't see the environment, restart VS Code after running the kernel installation step.
-    ---
+#### Option B: Using JupyterLab
 
-    **Option B: Using JupyterLab**
+If you don't have VS Code or prefer using JupyterLab:
 
-    If you don't have VS Code or prefer using JupyterLab:
-    1. Install JupyterLab using `pipx`:
-        ```bash
-        pipx install jupyterlab
-        ```
-        Don’t have `pipx` yet? Get it here: [https://pipx.pypa.io/stable/installation/](https://pipx.pypa.io/stable/installation/)
-    2. Launch JupyterLab:
-        ```bash
-        jupyter lab
-        ```
-    3. Open your notebook and select the kernel **Python (notebooks-nwp-env)** from the kernel menu.
+1. Install JupyterLab using `pipx`:
 
+    ```bash
+    pipx install jupyterlab
+    ```
+
+    Don’t have `pipx` yet? Get it here: [https://pipx.pypa.io/stable/installation/](https://pipx.pypa.io/stable/installation/)
+
+2. Launch JupyterLab:
+
+    ```bash
+    jupyter lab
+    ```
+
+3. Open your notebook and select the kernel **Python (notebooks-nwp-env)** from the kernel menu.
 
 ## 📚 Related Documentation
 
