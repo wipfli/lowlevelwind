@@ -11,7 +11,7 @@ This repository provides Jupyter notebook examples for accessing and processing 
 
 ---
 
-## 📓 Example Notebooks
+## 📓 Notebooks
 
 - [**01_retrieve_process_precip.ipynb**](01_retrieve_process_precip.ipynb) - Retrieve, process, and visualize deterministic precipitation forecasts from the ICON model.
 
@@ -19,38 +19,20 @@ This repository provides Jupyter notebook examples for accessing and processing 
 
 ### Install Dependencies
 
-Clone the repository and install all required packages:
-1. #### Ensure Python 3.11 is installed
-    This project requires **Python 3.11**. You can check your current version with:
-    ```bash
-    python3 --version
-    ```
+Clone the repository and install all required packages. This project requires **Python 3.11** and [Poetry](https://python-poetry.org/docs/) to manage dependencies and environments.
 
-2. #### Install Poetry 1.8.1
-    Poetry is used to manage Python dependencies and environments. Install it using the official installer:
-      ```bash
-      curl -sSL https://install.python-poetry.org | python3 - --version 1.8.1
-      ```
-      Make sure poetry is available in your shell (you may need to restart your terminal or follow the post-install instructions shown after installation).
-
-      Verify that Poetry is installed and check the version:
-      ```bash
-      poetry --version
-      ```
-
-3. #### Install Python dependencies using Poetry
-    Make sure to be at the root of the project's folder.
+1. #### Install Python dependencies using Poetry
     ```bash
     poetry install
     ```
 
-4. #### Install the Jupyter kernel
+2. #### Install the Jupyter kernel
     Activate the Poetry environment and register it as a Jupyter kernel so it can be used within notebooks:
     ```bash
     poetry run python -m ipykernel install --user --name=notebooks-nwp-env --display-name "Python (notebooks-nwp-env)"
     ```
 
-5. #### Open and run notebooks
+3. #### Open and run notebooks
     You can run the notebooks using **Visual Studio Code** or **JupyterLab** — whichever you prefer.
 
     **Option A: Using Visual Studio Code**
