@@ -13,7 +13,8 @@ This repository provides Jupyter notebook examples for accessing and processing 
 
 ## 📓 Example Notebooks
 
-- [**00_download_forecast_data.ipynb**](00_download_forecast_data.ipynb) - Download and read soil temperature forecast from the ICO
+- [**01_retrieve_process_precip.ipynb**](01_retrieve_process_precip.ipynb)- Retrieve and load precipitation forecasts as an Xarray object, then process, analyze, and visualize the data using Python tools.
+- [**02_download_soil_temp_forecasts.ipynb**](02_download_soil_temp_forecasts.ipynb) — Download forecast files to disk for offline storage, external tools, or advanced manual processing.
 - [**01_retrieve_process_precip.ipynb**](01_retrieve_process_precip.ipynb) - Retrieve, process, and visualize deterministic precipitation forecasts from the ICON model.
 
 ## 🚀 Getting Started
