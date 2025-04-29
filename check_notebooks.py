@@ -10,6 +10,7 @@ KERNEL_NAME = "notebooks-nwp-env"
 ROOT_DIR = Path(__file__).resolve().parent
 NOTEBOOK_DIRS = [ROOT_DIR, ROOT_DIR / "developer_notebooks"]
 
+
 def run_notebook(notebook_path: Path):
     with open(notebook_path) as f:
         nb = nbformat.read(f, as_version=4)
