@@ -1,111 +1,206 @@
 from datetime import datetime, timezone, timedelta
 from meteodatalab import ogd_api
 from earthkit.data import config
-from meteodatalab.operators import regrid, vertical_interpolation
-from meteodatalab.operators.vertical_interpolation import interpolate_k2p
+from meteodatalab.operators import regrid
+from meteodatalab import grib_decoder, data_source
+from meteodatalab.operators.destagger import destagger
+from meteodatalab.operators.vertical_interpolation import interpolate_k2any, TargetCoordinates, TargetCoordinatesAttrs
 
-print(dir(vertical_interpolation))
-exit()
+import time
 import rasterio
-from rasterio.transform import from_origin
 from rasterio.crs import CRS
 from rasterio.enums import ColorInterp
 import numpy as np
+import json
+import os
+import shutil
+
+from concurrent.futures import ProcessPoolExecutor
+
+def makeAll(reference_datetime, horizon, model, perturbed, eps):
+    collection = f'ogd-forecasting-icon-{model}'
+
+    req_U = ogd_api.Request(
+        collection=collection,
+        variable="U",
+        reference_datetime=reference_datetime,
+        perturbed=perturbed,
+        horizon=horizon,
+    )
+
+    req_V = ogd_api.Request(
+        collection=collection,
+        variable="V",
+        reference_datetime=reference_datetime,
+        perturbed=perturbed,
+        horizon=horizon, 
+    )
+
+    config.set("cache-policy", "user")
+    config.set("user-cache-directory", "/app/sma-cache")
 
 
-reference_datetime = datetime(2025, 5, 19, 12, 0, 0, tzinfo=timezone.utc)
-horizon = timedelta(hours=6)
-perturbed = False
-collection = "ogd-forecasting-icon-ch2"
-z = 70
-eps = 0
+    da_U = ogd_api.get_from_ogd(req_U)
+    da_V = ogd_api.get_from_ogd(req_V)
 
-req_U = ogd_api.Request(
-    collection=collection,
-    variable="U",
-    reference_datetime=reference_datetime,
-    perturbed=perturbed,
-    horizon=horizon,
-)
+    url = ogd_api.get_collection_asset_url(
+        collection_id=f"ch.meteoschweiz.ogd-forecasting-icon-{model}", 
+        asset_id=f"vertical_constants_icon-{model}-eps.grib2"
+    )
 
-req_V = ogd_api.Request(
-    collection=collection,
-    variable="V",
-    reference_datetime=reference_datetime,
-    perturbed=perturbed,
-    horizon=horizon, 
-)
+    ds = grib_decoder.load(
+        source=data_source.URLDataSource(urls=[url]), 
+        request={"param": "HHL"}, 
+        geo_coords=lambda uuid: {}
+    )
 
-req_P = ogd_api.Request(
-    collection=collection,
-    variable="P",
-    reference_datetime=reference_datetime,
-    perturbed=perturbed,
-    horizon=horizon, 
-)
+    hfl = destagger(ds["HHL"].squeeze(drop=True), "z")
 
-config.set("cache-policy", "temporary")
+    attrs = TargetCoordinatesAttrs("height_above_mean_sea_level", "height above the mean sea level", "m", "up")
 
-da_U = ogd_api.get_from_ogd(req_U)
-da_V = ogd_api.get_from_ogd(req_V)
-da_P = ogd_api.get_from_ogd(req_P)
+    def makeAltitudes(altitudes):
+        tc = TargetCoordinates("heightAboveSea", altitudes, attrs)
 
-def flight_level_to_hpa(flight_level: int) -> float:
-    altitude_ft = flight_level * 100
-    pressure_hpa = 1013.25 * (1 - (altitude_ft / 145366.45)) ** 5.255
-    return pressure_hpa
+        U_int = interpolate_k2any(da_U, "low_fold", hfl, tc, hfl)
+        V_int = interpolate_k2any(da_V, "low_fold", hfl, tc, hfl)
 
+        xmin = 5.379264
+        xmax = 11.024297
+        ymin = 45.497280
+        ymax = 48.105836
 
-target_levels = [flight_level_to_hpa(28)]
-print(target_levels)
+        nx = 429
+        ny = 195
 
-U_int = interpolate_k2p(field=da_U, mode="linear_in_lnp", p_field=da_P, p_tc_values=target_levels, p_tc_units='hPa')
-V_int = interpolate_k2p(field=da_V, mode="linear_in_lnp", p_field=da_P, p_tc_values=target_levels, p_tc_units='hPa')
+        destination = regrid.RegularGrid(
+            CRS.from_string("epsg:4326"), nx, ny, xmin, xmax, ymin, ymax
+        )
 
+        for i in range(len(altitudes)):
+            f_U = regrid.iconremap(U_int.isel(eps=eps, z=i), destination).squeeze()
+            f_V = regrid.iconremap(V_int.isel(eps=eps, z=i), destination).squeeze()
 
-xmin = 5.379264
-xmax = 11.024297
-ymin = 45.497280
-ymax = 48.105836
+            shift = 128
+            ms_to_kmh = 3.6
+            nan_value = 0
 
-nx = 429
-ny = 195
+            alpha = np.ones(f_U.values.shape)
+            alpha[np.isnan(f_U.values)] = 0
+            alpha *= 255
 
-destination = regrid.RegularGrid(
-    CRS.from_string("epsg:4326"), nx, ny, xmin, xmax, ymin, ymax
-)
+            f_U.values[np.isfinite(f_U.values)] *= ms_to_kmh
+            f_U.values[np.isfinite(f_U.values)] += shift
+            f_U.values[np.isnan(f_U.values)] = nan_value
 
-xres = (destination.xmax - destination.xmin) / destination.nx
-yres = (destination.ymax - destination.ymin) / destination.ny
+            f_V.values[np.isfinite(f_V.values)] *= ms_to_kmh
+            f_V.values[np.isfinite(f_V.values)] += shift
+            f_V.values[np.isnan(f_V.values)] = nan_value
 
-transform = from_origin(destination.xmin, destination.ymin, xres, -yres)
+            rgba = np.stack(
+                [
+                    f_U.values.astype(np.uint8),
+                    f_V.values.astype(np.uint8),
+                    np.zeros(f_U.values.shape).astype(np.uint8),
+                    alpha.astype(np.uint8)
+                ], 
+                axis=0
+            )
 
-f_U = regrid.iconremap(U_int.isel(eps=eps, z=0), destination).squeeze()
-f_V = regrid.iconremap(V_int.isel(eps=eps, z=0), destination).squeeze()
+            rgba_flipped = rgba[:, ::-1, :]
 
-shift = 128
-f_U.values[np.isnan(f_U.values)] = 0
-f_V.values[np.isnan(f_V.values)] = 0
+            member_filename = f'EPS{eps}' if perturbed else 'CTRL'
+            model_filename = model.upper()
+            altitude_filename = f'{altitudes[i]}M'
+            time_filename = int((reference_datetime + horizon).timestamp())
+            # CH1-CTRL-650M-1747818000-wind.png
+            filename = f'data/{model_filename}-{member_filename}-{altitude_filename}-{time_filename}-wind.png'
+            print(f'Writing {filename}...')
+            with rasterio.open(
+                filename,
+                "w",
+                driver="PNG",
+                height=f_U.shape[0],
+                width=f_U.shape[1],
+                count=4,
+                dtype=rgba.dtype,
+            ) as dst:
+                dst.write(rgba_flipped)
+                dst.colorinterp = [ColorInterp.red, ColorInterp.green, ColorInterp.blue, ColorInterp.alpha]
 
-rgb = np.stack(
-    [
-        (f_U.values * 3.6 + shift).astype(np.uint8),
-        (f_V.values * 3.6 + shift).astype(np.uint8),
-        np.zeros(f_U.values.shape).astype(np.uint8)
-    ], 
-    axis=0
-)
+    for altitude in [1500]: #list(range(600, 3050, 50)):
+        makeAltitudes([altitude])
 
-rgb_flipped = rgb[:, ::-1, :]
+def round_down_to_last_3_hours_utc():
+    now_utc = datetime.utcnow()
+    hours_to_subtract = now_utc.hour % 3
+    rounded_time = now_utc.replace(minute=0, second=0, microsecond=0) - timedelta(hours=hours_to_subtract)
+    unix_timestamp = int(rounded_time.timestamp())
+    return unix_timestamp
 
-with rasterio.open(
-    "data/wind.png",
-    "w",
-    driver="PNG",
-    height=f_U.shape[0],
-    width=f_U.shape[1],
-    count=3,
-    dtype=rgb.dtype,
-) as dst:
-    dst.write(rgb_flipped)
-    dst.colorinterp = [ColorInterp.red, ColorInterp.green, ColorInterp.blue]
+def delete_all_files_in_folder(folder):
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+def copy_all_files(src_folder, dst_folder):
+    os.makedirs(dst_folder, exist_ok=True)
+    
+    for filename in os.listdir(src_folder):
+        src_file = os.path.join(src_folder, filename)
+        dst_file = os.path.join(dst_folder, filename)
+        
+        if os.path.isfile(src_file):
+            shutil.copy2(src_file, dst_file)
+
+if __name__ == "__main__":
+    tic = time.time()
+
+    last_run = ''
+    with open('data/last_run.json') as f:
+        last_run = json.load(f)['last_run']
+
+    model = 'ch1'
+    perturbed = False
+    eps = 0
+    collection = f'ogd-forecasting-icon-{model}'
+
+    reference_datetime = datetime.fromtimestamp(round_down_to_last_3_hours_utc())
+    while True:
+        try:
+            ogd_api.get_asset_url(ogd_api.Request(
+                collection=collection,
+                variable="U",
+                reference_datetime=reference_datetime,
+                perturbed=perturbed,
+                horizon=timedelta(hours=0),
+            ))
+        except ValueError as e:
+            reference_datetime -= timedelta(hours=3)
+            continue
+        break
+
+    latest_available_run = int(reference_datetime.timestamp())
+
+    if last_run == latest_available_run:
+        print('No new run available...')
+        exit()
+    
+    delete_all_files_in_folder('data')
+    num_threads = 4 # multiprocessing.cpu_count()
+    print(f"Starting parallel tasks with {num_threads} threads...")
+    with ProcessPoolExecutor(max_workers=num_threads) as executor:
+        hours_list = range(0, 31, 1)
+        horizons = [timedelta(hours=hours) for hours in hours_list]
+        futures = [executor.submit(makeAll, reference_datetime, horizon, model, perturbed, eps) for horizon in horizons]
+        for future in futures:
+            future.result()
+    with open('data/last_run.json', 'w') as f:
+        json.dump({"last_run": latest_available_run}, f)
+    
+    copy_all_files('data', 'data-copy')
+    delete_all_files_in_folder('sma-cache')
+    print(f'{(time.time() - tic)} sec')
+
+# CH1-CTRL-600M-1747807200-wind.png # python
+# CH1-CTRL-600M-1747821600-wind.png # js
