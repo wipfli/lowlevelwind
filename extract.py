@@ -186,6 +186,7 @@ if __name__ == "__main__":
         print('No new run available...')
         exit()
     
+    print(f'Found new run {reference_datetime}...')
     delete_all_files_in_folder('data')
     num_threads = 4 # multiprocessing.cpu_count()
     print(f"Starting parallel tasks with {num_threads} threads...")

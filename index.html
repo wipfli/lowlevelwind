@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Low Level Wind</title>
+    <script src="https://unpkg.com/maplibre-gl@5.5.0/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@5.5.0/dist/maplibre-gl.css" rel="stylesheet" />
+    <script src="https://unpkg.com/deck.gl@9.1.4/dist/dist.dev.js"></script>
+    <script src="https://unpkg.com/weatherlayers-gl@2025.5.0/dist/weatherlayers-client.umd.min.js"></script>
+    <script src="https://unpkg.com/weatherlayers-gl@2025.5.0/dist/weatherlayers-deck.umd.min.js"></script>
+    <script src="https://unpkg.com/pmtiles@3.2.0/dist/pmtiles.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body,
+        #map {
+            height: 100%;
+        }
+
+        .center-marker {
+            position: absolute;
+            top: 25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .marker-dot {
+            width: 4px;
+            height: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            position: relative;
+            /* container for the absolutely positioned label */
+        }
+
+        .marker-label {
+            position: absolute;
+            bottom: 10px;
+            /* space below the dot */
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: black;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2px 6px;
+            border-radius: 4px;
+            user-select: none;
+            font-family: sans-serif;
+            white-space: nowrap;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: sans-serif;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map">
+    </div>
+    <div id="controls">
+        <div>
+            <button onclick="prev('time')">◀</button>
+            <select id="timeSelect" onchange="onChange()"></select>
+            <button onclick="next('time')">▶</button>
+        </div>
+        <div>
+            <button onclick="prev('altitude')">◀</button>
+            <select id="altitudeSelect" onchange="onChange()"></select>
+            <button onclick="next('altitude')">▶</button>
+        </div>
+        <!-- <div>
+            <button onclick="prev('model')">◀</button>
+            <select id="modelSelect" onchange="onChange()">
+            </select>
+            <button onclick="next('model')">▶</button>
+        </div>
+        <div>
+            <button onclick="prev('member')">◀</button>
+            <select id="memberSelect" onchange="onChange()"></select>
+            <button onclick="next('member')">▶</button>
+        </div> -->
+    </div>
+    <div class="center-marker">
+        <div id="centerLabel" class="marker-label">Loading…</div>
+        <div class="marker-dot"></div>
+    </div>
+    <script type="module">
+        window.addEventListener('DOMContentLoaded', async () => {
+
+            const protocol = new pmtiles.Protocol();
+            maplibregl.addProtocol('pmtiles', protocol.tile);
+            const map = window.map = new maplibregl.Map({
+                container: 'map',
+                style: 'style-white.json',
+                center: [8.2, 46.8],
+                zoom: 8,
+                hash: 'map',
+                attributionControl: false,
+            });
+
+            map.addControl(new maplibregl.AttributionControl({
+                compact: true,
+                customAttribution: '<a href="https://sma.ch">MeteoSwiss ICON CH1</a> | <a href="https://weatherlayers.com/">WeatherLayers</a>'
+            }), 'top-left');
+
+            await new Promise(resolve => map.once('style.load', resolve));
+
+            const deckLayer = new deck.MapboxOverlay({
+                interleaved: true,
+                layers: [],
+            });
+            map.addControl(deckLayer);
+
+            function waitForDeck(getDeck) {
+                return new Promise(resolve => {
+                    function wait() {
+                        const deck = getDeck();
+                        if (deck && deck.getCanvas()) {
+                            resolve(deck);
+                        } else {
+                            setTimeout(wait, 100);
+                        }
+                    }
+                    wait();
+                });
+            }
+            const deckgl = window.deckgl = await waitForDeck(() => deckLayer._deck);
+
+            let currentImageUrl = '';
+            let image = undefined;
+
+            const imageUnscale = [-128, 127];
+            const bounds = [5.379263587935693, 45.497280246347316, 11.0242973, 48.1058362];
+
+
+            const updateMarker = () => {
+                if (!image) {
+                    document.getElementById('centerLabel').textContent = 'NaN km/h';
+                    return;
+                }
+                const imageProperties = {
+                    image,
+                    image2: null,
+                    imageSmoothing: 0,
+                    imageInterpolation: WeatherLayers.ImageInterpolation.CUBIC,
+                    imageWeight: 0,
+                    imageType: WeatherLayers.ImageType.VECTOR,
+                    imageUnscale,
+                }
+                const bbox = [-5, 45, 12, 49];
+                const center = map.getCenter();
+                const topLeft = map.unproject([0, 0]);
+                const points = [[center.lng, (center.lat + topLeft.lat) / 2]]
+                const collection = WeatherLayers.getRasterPoints(imageProperties, bounds, points);
+                const properties = collection['features'][0]['properties'];
+                document.getElementById('centerLabel').textContent = `${properties.value.toFixed(1)} km/h`;
+            }
+
+            const updateLayers = async (newImageUrl) => {
+                try {
+                    const newImage = await WeatherLayers.loadTextureData(newImageUrl, false);
+                    image = newImage;
+                }
+                catch (err) {
+                    image = undefined;
+                    deckLayer.setProps({ layers: [] });
+                    updateMarker();
+                    return;
+                }
+
+                deckLayer.setProps({
+                    layers: [
+                        new WeatherLayers.RasterLayer({
+                            id: 'raster',
+                            // data properties
+                            image,
+                            image2: null,
+                            imageSmoothing: 0,
+                            imageInterpolation: WeatherLayers.ImageInterpolation.CUBIC,
+                            imageWeight: 0,
+                            imageType: WeatherLayers.ImageType.VECTOR,
+                            imageUnscale,
+                            imageMinValue: null,
+                            imageMaxValue: null,
+                            bounds,
+                            // style properties
+                            visible: true,
+                            palette: [
+                                [1.852 * 0, [255, 255, 255]],
+                                [1.852 * 4, [239, 244, 209]],
+                                [1.852 * 6, [232, 244, 158]],
+                                [1.852 * 10, [170, 206, 99]],
+                                [1.852 * 14, [170, 206, 99]],
+                                [1.852 * 18, [226, 237, 22]],
+                                [1.852 * 22, [255, 237, 0]],
+                                [1.852 * 26, [255, 237, 130]],
+                                [1.852 * 30, [244, 209, 127]],
+                                [1.852 * 35, [237, 165, 73]],
+                                [1.852 * 40, [229, 140, 61]],
+                                [1.852 * 45, [219, 124, 61]],
+                            ],
+                            opacity: 0.9,
+                            pickable: true,
+                            extensions: [new deck.ClipExtension()],
+                            clipBounds: [-5, 45, 12, 49],
+                            beforeId: 'boundaries_country'
+                        }),
+                        new WeatherLayers.ParticleLayer({
+                            id: 'particle',
+                            // data properties
+                            image,
+                            image2: null,
+                            imageSmoothing: 0,
+                            imageInterpolation: WeatherLayers.ImageInterpolation.CUBIC,
+                            imageWeight: 0,
+                            imageType: WeatherLayers.ImageType.VECTOR,
+                            imageUnscale,
+                            bounds,
+                            // style properties
+                            visible: true,
+                            numParticles: Math.round(100 * window.innerWidth * window.innerHeight / 300000),
+                            maxAge: 15,
+                            speedFactor: 8,
+                            width: 2.5,
+                            color: [255, 255, 255],
+                            palette: null,
+                            opacity: 1.0,
+                            animate: true,
+                            extensions: [new deck.ClipExtension()],
+                            clipBounds: [-5, 45, 12, 49],
+                            getPolygonOffset: () => [0, -1000],
+                            beforeId: "boundaries_country",
+                        }),
+                    ],
+                });
+
+                updateMarker();
+            };
+
+
+
+            // Controls
+
+            async function initControls() {
+
+                const models = ['CH1', 'CH2'];
+                const altitudeSteps = Array.from({ length: (3000 - 600) / 50 + 1 }, (_, i) => (600 + i * 50) + 'M');
+                // altitudeSteps.unshift('GND');
+                const members = ['CTRL', ...Array.from({ length: 11 }, (_, i) => `EPS${i}`)];
+                const currentHour = Math.floor(Date.now() / 3600000) * 3600;
+
+                const response = await fetch('data-copy/last_run.json'); // Update this path
+                const data = await response.json();
+                const lastRunTimestamp = data.last_run;
+                const times = Array.from({ length: 31 }, (_, i) => lastRunTimestamp + i * 3600);
+
+                const selectIds = {
+                    // model: 'modelSelect',
+                    time: 'timeSelect',
+                    altitude: 'altitudeSelect',
+                    // member: 'memberSelect',
+                };
+
+                const options = {
+                    model: models,
+                    time: times,
+                    altitude: altitudeSteps,
+                    member: members,
+                };
+
+                function formatCustomTime(unixSeconds) {
+                    const date = new Date(unixSeconds * 1000); // convert to ms
+                    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    const day = weekdays[date.getDay()];
+                    const hours = date.getHours(); // local time
+
+                    return `${day} ${hours.toString().padStart(2, '0')}LT`;
+                }
+                function populateSelect(id, values) {
+                    const sel = document.getElementById(id);
+                    values.forEach(v => {
+                        const opt = document.createElement('option');
+                        opt.value = v;
+                        opt.textContent = (id === 'timeSelect') ? formatCustomTime(v) : v;
+                        if (id === 'altitudeSelect' && v === '1500M') {
+                            opt.selected = true;
+                        }
+                        sel.appendChild(opt);
+                    });
+                }
+
+                Object.entries(selectIds).forEach(([key, id]) => populateSelect(id, options[key]));
+
+                async function onChange() {
+                    const model = 'CH1'; // document.getElementById('modelSelect').value;
+                    const time = document.getElementById('timeSelect').value;
+                    const altitude = document.getElementById('altitudeSelect').value;
+                    const member = 'CTRL'; // document.getElementById('memberSelect').value;
+                    await updateLayers(`data-copy/${model}-${member}-${altitude}-${time}-wind.png`);
+                }
+
+                function prev(type) {
+                    const sel = document.getElementById(selectIds[type]);
+                    if (sel.selectedIndex > 0) sel.selectedIndex -= 1;
+                    onChange();
+                }
+
+                function next(type) {
+                    const sel = document.getElementById(selectIds[type]);
+                    if (sel.selectedIndex < sel.options.length - 1) sel.selectedIndex += 1;
+                    onChange();
+                }
+
+                window.onChange = onChange;
+                window.prev = prev;
+                window.next = next;
+
+
+                map.on('move', updateMarker);
+                map.dragRotate.disable();
+                map.touchZoomRotate.disableRotation();
+                map.keyboard.disableRotation();
+                map.setPitch(0);
+                map.setBearing(0);
+
+                onChange();
+            }
+
+            initControls();
+
+        });
+
+
+    </script>
+</body>
+
+</html>
