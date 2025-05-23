@@ -33,9 +33,9 @@
         }
 
         .marker-dot {
-            width: 4px;
-            height: 4px;
-            background: rgba(0, 0, 0, 0.7);
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 0, 0, 1);
             border-radius: 50%;
             position: relative;
             /* container for the absolutely positioned label */
@@ -43,7 +43,7 @@
 
         .marker-label {
             position: absolute;
-            bottom: 10px;
+            bottom: 13px;
             /* space below the dot */
             left: 50%;
             transform: translateX(-50%);
@@ -60,15 +60,59 @@
         #controls {
             position: absolute;
             bottom: 10px;
-            left: 10px;
+            left: 50%;
+            transform: translate(-50%, 0);
             z-index: 1000;
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 16px;
+            border-radius: 12px;
             font-family: sans-serif;
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        @media (min-width: 600px) {
+            #controls {
+                flex-direction: row;
+                gap: 20px;
+            }
+        }
+
+        #controls div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #controls button {
+            font-size: 18px;
+            padding: 8px 12px;
+            border: none;
+            background: #007bffc4;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #controls button:hover {
+            background: #0056b3;
+        }
+
+        #controls select {
+            font-size: 16px;
+            padding: 12px 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            width: 180px;
+            box-sizing: border-box;
         }
     </style>
 </head>
@@ -78,13 +122,13 @@
     </div>
     <div id="controls">
         <div>
-            <button onclick="prev('time')">◀</button>
             <select id="timeSelect" onchange="onChange()"></select>
+            <button onclick="prev('time')">◀</button>
             <button onclick="next('time')">▶</button>
         </div>
         <div>
-            <button onclick="prev('altitude')">◀</button>
             <select id="altitudeSelect" onchange="onChange()"></select>
+            <button onclick="prev('altitude')">◀</button>
             <button onclick="next('altitude')">▶</button>
         </div>
         <!-- <div>
@@ -117,9 +161,34 @@
                 attributionControl: false,
             });
 
+            map.on('load', function () {
+                map.addSource('dem', {
+                    'type': 'raster-dem',
+                    'tiles': ['https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png'],
+                    'tileSize': 256,
+                    'minzoom': 0,
+                    'maxzoom': 13,
+                    'encoding': "terrarium",
+                });
+                map.addLayer({
+                    id: "hills",
+                    type: "hillshade",
+                    source: "dem",
+                    paint: {
+                        'hillshade-method': 'igor',
+                        'hillshade-illumination-altitude': 45,
+                        'hillshade-illumination-direction': 315,
+                        'hillshade-shadow-color': 'rgba(0, 0, 0, 0.3)',
+                        'hillshade-highlight-color': 'rgba(255, 255, 255, 0.3)',
+                        'hillshade-accent-color': 'rgba(0, 0, 0, 0.3)',
+                    }
+                }, 'places_locality')
+
+            });
+
             map.addControl(new maplibregl.AttributionControl({
                 compact: true,
-                customAttribution: '<a href="https://sma.ch">MeteoSwiss ICON CH1</a> | <a href="https://weatherlayers.com/">WeatherLayers</a>'
+                customAttribution: '<a href="https://sma.ch">MeteoSwiss ICON CH1</a> | <a href="https://weatherlayers.com/">WeatherLayers</a> | <a href="https://github.com/wipfli/lowlevelwind/">Source Code</a>'
             }), 'top-left');
 
             await new Promise(resolve => map.once('style.load', resolve));
@@ -187,6 +256,34 @@
                     return;
                 }
 
+                const paletteSMA = [
+                    [1.852 * 0, [255, 255, 255]],
+                    [1.852 * 4, [239, 244, 209]],
+                    [1.852 * 6, [232, 244, 158]],
+                    [1.852 * 10, [170, 206, 99]],
+                    [1.852 * 14, [170, 206, 99]],
+                    [1.852 * 18, [226, 237, 22]],
+                    [1.852 * 22, [255, 237, 0]],
+                    [1.852 * 26, [255, 237, 130]],
+                    [1.852 * 30, [244, 209, 127]],
+                    [1.852 * 35, [237, 165, 73]],
+                    [1.852 * 40, [229, 140, 61]],
+                    [1.852 * 45, [219, 124, 61]],
+                ];
+                // const paletteWindy = [
+                //     [0,  [98, 113, 183]],
+                //     [4,  [57, 97, 159]],
+                //     [11, [74, 148, 169]],
+                //     [18, [77, 141, 123]],
+                //     [25, [83, 165, 83]],
+                //     [32, [53, 159, 53]],
+                //     [40, [167, 157, 81]],
+                //     [47, [159, 127, 58]],
+                //     [54, [161, 108, 92]],
+                //     [61, [129, 58, 78]],
+                //     [68, [175, 80, 136]],
+                // ];
+                const beforeId = 'water-lake';
                 deckLayer.setProps({
                     layers: [
                         new WeatherLayers.RasterLayer({
@@ -204,25 +301,12 @@
                             bounds,
                             // style properties
                             visible: true,
-                            palette: [
-                                [1.852 * 0, [255, 255, 255]],
-                                [1.852 * 4, [239, 244, 209]],
-                                [1.852 * 6, [232, 244, 158]],
-                                [1.852 * 10, [170, 206, 99]],
-                                [1.852 * 14, [170, 206, 99]],
-                                [1.852 * 18, [226, 237, 22]],
-                                [1.852 * 22, [255, 237, 0]],
-                                [1.852 * 26, [255, 237, 130]],
-                                [1.852 * 30, [244, 209, 127]],
-                                [1.852 * 35, [237, 165, 73]],
-                                [1.852 * 40, [229, 140, 61]],
-                                [1.852 * 45, [219, 124, 61]],
-                            ],
-                            opacity: 0.9,
+                            palette: paletteSMA,
+                            opacity: 1.0,
                             pickable: true,
                             extensions: [new deck.ClipExtension()],
                             clipBounds: [-5, 45, 12, 49],
-                            beforeId: 'boundaries_country'
+                            beforeId,
                         }),
                         new WeatherLayers.ParticleLayer({
                             id: 'particle',
@@ -242,13 +326,16 @@
                             speedFactor: 8,
                             width: 2.5,
                             color: [255, 255, 255],
-                            palette: null,
+                            palette: [
+                                [0, [0, 0, 0]],
+                                [15, [255, 255, 255]],
+                            ],
                             opacity: 1.0,
                             animate: true,
                             extensions: [new deck.ClipExtension()],
                             clipBounds: [-5, 45, 12, 49],
                             getPolygonOffset: () => [0, -1000],
-                            beforeId: "boundaries_country",
+                            beforeId,
                         }),
                     ],
                 });
@@ -341,6 +428,7 @@
                 map.keyboard.disableRotation();
                 map.setPitch(0);
                 map.setBearing(0);
+                map.resize();
 
                 onChange();
             }

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from meteodatalab import ogd_api
 from earthkit.data import config
 from meteodatalab.operators import regrid
@@ -39,6 +39,8 @@ def makeAll(reference_datetime, horizon, model, perturbed, eps):
     config.set("cache-policy", "user")
     config.set("user-cache-directory", "/app/sma-cache")
 
+    print(ogd_api.get_asset_url(req_U))
+    print(ogd_api.get_asset_url(req_V))
 
     da_U = ogd_api.get_from_ogd(req_U)
     da_V = ogd_api.get_from_ogd(req_V)
@@ -127,7 +129,7 @@ def makeAll(reference_datetime, horizon, model, perturbed, eps):
                 dst.write(rgba_flipped)
                 dst.colorinterp = [ColorInterp.red, ColorInterp.green, ColorInterp.blue, ColorInterp.alpha]
 
-    for altitude in [1500]: #list(range(600, 3050, 50)):
+    for altitude in list(range(600, 3050, 50)):
         makeAltitudes([altitude])
 
 def round_down_to_last_3_hours_utc():
@@ -153,12 +155,15 @@ def copy_all_files(src_folder, dst_folder):
         if os.path.isfile(src_file):
             shutil.copy2(src_file, dst_file)
 
-if __name__ == "__main__":
+while True:
     tic = time.time()
 
     last_run = ''
-    with open('data/last_run.json') as f:
-        last_run = json.load(f)['last_run']
+    try:
+        with open('data/last_run.json') as f:
+            last_run = json.load(f)['last_run']
+    except FileNotFoundError:
+        pass
 
     model = 'ch1'
     perturbed = False
@@ -173,7 +178,14 @@ if __name__ == "__main__":
                 variable="U",
                 reference_datetime=reference_datetime,
                 perturbed=perturbed,
-                horizon=timedelta(hours=0),
+                horizon=timedelta(hours=30),
+            ))
+            ogd_api.get_asset_url(ogd_api.Request(
+                collection=collection,
+                variable="V",
+                reference_datetime=reference_datetime,
+                perturbed=perturbed,
+                horizon=timedelta(hours=30),
             ))
         except ValueError as e:
             reference_datetime -= timedelta(hours=3)
@@ -183,8 +195,10 @@ if __name__ == "__main__":
     latest_available_run = int(reference_datetime.timestamp())
 
     if last_run == latest_available_run:
-        print('No new run available...')
-        exit()
+        sleep_min = 1
+        print(f'No new run available. Sleep for {sleep_min} min...')
+        time.sleep(sleep_min * 60)
+        continue
     
     print(f'Found new run {reference_datetime}...')
     delete_all_files_in_folder('data')
@@ -201,7 +215,4 @@ if __name__ == "__main__":
     
     copy_all_files('data', 'data-copy')
     delete_all_files_in_folder('sma-cache')
-    print(f'{(time.time() - tic)} sec')
-
-# CH1-CTRL-600M-1747807200-wind.png # python
-# CH1-CTRL-600M-1747821600-wind.png # js
+    print(f'Finished in {(time.time() - tic) / 60} min')
