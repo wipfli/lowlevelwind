@@ -146,6 +146,7 @@ def delete_all_files_in_folder(folder):
             os.remove(file_path)
 
 def copy_all_files(src_folder, dst_folder):
+    print(f'Copy files from {src_folder} to {dst_folder}...')
     os.makedirs(dst_folder, exist_ok=True)
     
     for filename in os.listdir(src_folder):
@@ -154,6 +155,7 @@ def copy_all_files(src_folder, dst_folder):
         
         if os.path.isfile(src_file):
             shutil.copy2(src_file, dst_file)
+            print(f'Copied {src_file} to {dst_file}.')
 
 while True:
     tic = time.time()
@@ -213,6 +215,6 @@ while True:
     with open('data/last_run.json', 'w') as f:
         json.dump({"last_run": latest_available_run}, f)
     
-    copy_all_files('data', 'data-copy')
+    copy_all_files('data', '/var/www/html/data-copy/')
     delete_all_files_in_folder('sma-cache')
     print(f'Finished in {(time.time() - tic) / 60} min')
