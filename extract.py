@@ -52,9 +52,9 @@ def makeAll(reference_datetime, horizon, model, perturbed, eps):
             logger.info(f"Attempting to get asset URLs for horizon {horizon}")
             
             try:
-                url_U = ogd_api.get_asset_url(req_U)
-                url_V = ogd_api.get_asset_url(req_V)
-                logger.info(f"Got URLs: {url_U}, {url_V}")
+                urls_U = ogd_api.get_asset_urls(req_U)
+                urls_V = ogd_api.get_asset_urls(req_V)
+                logger.info(f"Got URLs: {urls_U}, {urls_V}")
             except (requests.exceptions.JSONDecodeError, requests.exceptions.ConnectionError) as e:
                 logger.warning(f"API request failed on attempt {attempt + 1}: {e}")
                 if attempt < max_retries - 1:
@@ -212,14 +212,14 @@ def check_data_availability(reference_datetime, model, perturbed, eps):
     
     for attempt in range(max_retries):
         try:
-            ogd_api.get_asset_url(ogd_api.Request(
+            ogd_api.get_asset_urls(ogd_api.Request(
                 collection=collection,
                 variable="U",
                 reference_datetime=reference_datetime,
                 perturbed=perturbed,
                 horizon=timedelta(hours=30),
             ))
-            ogd_api.get_asset_url(ogd_api.Request(
+            ogd_api.get_asset_urls(ogd_api.Request(
                 collection=collection,
                 variable="V",
                 reference_datetime=reference_datetime,
@@ -270,7 +270,7 @@ def main():
         logger.info(f'Found new run {reference_datetime}...')
         delete_all_files_in_folder('data')
         
-        num_threads = 2
+        num_threads = 4
         logger.info(f"Starting parallel tasks with {num_threads} threads...")
         
         successful_tasks = 0
