@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from meteodatalab import ogd_api
 from earthkit.data import config
 from meteodatalab.operators import regrid
@@ -21,6 +21,47 @@ import traceback
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+successful_api_calls = 0
+failed_api_calls = 0
+
+def get_horizons(collection):
+    return [timedelta(hours=h) for h in range(34 if 'ch1' in collection else 121)]
+
+def get_latest_reference_datetime(collection, variable, perturbed, horizon):
+    global successful_api_calls
+    global failed_api_calls
+    
+    r = ogd_api.Request(
+        collection=collection,
+        variable=variable,
+        reference_datetime="latest",
+        perturbed=perturbed,
+        horizon=horizon,
+    )
+    try:
+        urls = ogd_api.get_asset_urls(r)
+    except (requests.exceptions.JSONDecodeError, requests.exceptions.ConnectionError) as e:
+        failed_api_calls += 1
+        return None
+    successful_api_calls += 1
+    if len(urls) < 1:
+        return None
+    parts = urls[0].split('-')
+    return datetime.strptime(parts[3], '%Y%m%d%H%M').replace(tzinfo=timezone.utc)
+
+def get_latest_completed_reference_datetime(collection):
+    reference_datetimes = []
+    horizons = get_horizons(collection)
+    for variable in ['U', 'V']:
+        for perturbed in [False]:
+            for horizon in horizons:
+                print('checking for latest data: variable', variable, 'perturbed', perturbed, 'horizon', horizon)
+                reference_datetime = get_latest_reference_datetime(collection, variable, perturbed, horizon)
+                print(reference_datetime)
+                if reference_datetime is not None:
+                    reference_datetimes.append(reference_datetime)
+    return min(reference_datetimes)
 
 def makeAll(reference_datetime, horizon, model, perturbed, eps):
     max_retries = 3
@@ -169,13 +210,6 @@ def makeAll(reference_datetime, horizon, model, perturbed, eps):
             else:
                 raise
 
-def round_down_to_last_3_hours_utc():
-    now_utc = datetime.utcnow()
-    hours_to_subtract = now_utc.hour % 3
-    rounded_time = now_utc.replace(minute=0, second=0, microsecond=0) - timedelta(hours=hours_to_subtract)
-    unix_timestamp = int(rounded_time.timestamp())
-    return unix_timestamp
-
 def delete_all_files_in_folder(folder):
     if not os.path.exists(folder):
         return
@@ -206,37 +240,12 @@ def copy_all_files(src_folder, dst_folder):
             except IOError as e:
                 logger.error(f"Could not copy {src_file} to {dst_file}: {e}")
 
-def check_data_availability(reference_datetime, model, perturbed, eps):
-    collection = f'ogd-forecasting-icon-{model}'
-    max_retries = 3
-    
-    for attempt in range(max_retries):
-        try:
-            ogd_api.get_asset_urls(ogd_api.Request(
-                collection=collection,
-                variable="U",
-                reference_datetime=reference_datetime,
-                perturbed=perturbed,
-                horizon=timedelta(hours=30),
-            ))
-            ogd_api.get_asset_urls(ogd_api.Request(
-                collection=collection,
-                variable="V",
-                reference_datetime=reference_datetime,
-                perturbed=perturbed,
-                horizon=timedelta(hours=30),
-            ))
-            return True
-        except (ValueError, requests.exceptions.JSONDecodeError, requests.exceptions.ConnectionError) as e:
-            logger.warning(f"Data availability check failed on attempt {attempt + 1}: {e}")
-            if attempt < max_retries - 1:
-                time.sleep(2)
-                continue
-            return False
-
 def main():
     while True:
         tic = time.time()
+
+        print('successful_api_calls', successful_api_calls)
+        print('failed_api_calls', failed_api_calls)
 
         last_run = ''
         try:
@@ -248,17 +257,10 @@ def main():
         model = 'ch1'
         perturbed = False
         eps = 0
+        collection = f'ogd-forecasting-icon-{model}'
 
-        reference_datetime = datetime.fromtimestamp(round_down_to_last_3_hours_utc())
+        reference_datetime = get_latest_completed_reference_datetime(collection)
         
-        logger.info(f"Checking data availability starting from {reference_datetime}")
-        
-        while True:
-            if check_data_availability(reference_datetime, model, perturbed, eps):
-                break
-            reference_datetime -= timedelta(hours=3)
-            logger.info(f"Data not available, trying {reference_datetime}")
-
         latest_available_run = int(reference_datetime.timestamp())
 
         if last_run == latest_available_run:
