@@ -11,6 +11,8 @@
     <script src="https://unpkg.com/weatherlayers-gl@2025.5.0/dist/weatherlayers-client.umd.min.js"></script>
     <script src="https://unpkg.com/weatherlayers-gl@2025.5.0/dist/weatherlayers-deck.umd.min.js"></script>
     <script src="https://unpkg.com/pmtiles@3.2.0/dist/pmtiles.js"></script>
+    <script src="https://unpkg.com/geotiff@2.1.3/dist-browser/geotiff.js"></script>
+
     <style>
         body {
             margin: 0;
@@ -47,6 +49,7 @@
             /* space below the dot */
             left: 50%;
             transform: translateX(-50%);
+            text-align: center;
             font-size: 14px;
             color: black;
             background: rgba(255, 255, 255, 0.9);
@@ -144,12 +147,11 @@
         </div> -->
     </div>
     <div class="center-marker">
-        <div id="centerLabel" class="marker-label">Loading…</div>
+        <div id="centerLabel" class="marker-label">Loading…<br>Loading...</div>
         <div class="marker-dot"></div>
     </div>
     <script type="module">
         window.addEventListener('DOMContentLoaded', async () => {
-
             const protocol = new pmtiles.Protocol();
             maplibregl.addProtocol('pmtiles', protocol.tile);
             const map = window.map = new maplibregl.Map({
@@ -193,6 +195,8 @@
 
             await new Promise(resolve => map.once('style.load', resolve));
 
+            WeatherLayers.setLibrary('geotiff', GeoTIFF);
+
             const deckLayer = new deck.MapboxOverlay({
                 interleaved: true,
                 layers: [],
@@ -215,15 +219,16 @@
             const deckgl = window.deckgl = await waitForDeck(() => deckLayer._deck);
 
             let currentImageUrl = '';
+            let currentHflImageUrl = '';
             let image = undefined;
+            let hflImage = undefined;
 
             const imageUnscale = [-128, 127];
             const bounds = [5.379263587935693, 45.497280246347316, 11.0242973, 48.1058362];
 
-
             const updateMarker = () => {
-                if (!image) {
-                    document.getElementById('centerLabel').textContent = 'NaN km/h';
+                if (!image || !hflImage) {
+                    document.getElementById('centerLabel').innerHTML = 'NaN km/h<br>NaN m AMSL';
                     return;
                 }
                 const imageProperties = {
@@ -235,21 +240,34 @@
                     imageType: WeatherLayers.ImageType.VECTOR,
                     imageUnscale,
                 }
+                const hflImageProperties = {
+                    'image': hflImage,
+                    image2: null,
+                    imageSmoothing: 0,
+                    imageInterpolation: WeatherLayers.ImageInterpolation.CUBIC,
+                    imageWeight: 0,
+                    imageType: WeatherLayers.ImageType.SCALAR,
+                }
                 const bbox = [-5, 45, 12, 49];
                 const center = map.getCenter();
                 const topLeft = map.unproject([0, 0]);
                 const points = [[center.lng, (center.lat + topLeft.lat) / 2]]
                 const collection = WeatherLayers.getRasterPoints(imageProperties, bounds, points);
                 const properties = collection['features'][0]['properties'];
-                document.getElementById('centerLabel').textContent = `${properties.value.toFixed(1)} km/h`;
+                const hflCollection = WeatherLayers.getRasterPoints(hflImageProperties, bounds, points);
+                const elevation = hflCollection['features'][0]['properties']['value'];
+                document.getElementById('centerLabel').innerHTML = `${properties.value.toFixed(1)} km/h<br>${elevation.toFixed(0)} m AMSL`;
             }
 
-            const updateLayers = async (newImageUrl) => {
+            const updateLayers = async (model, member, altitude, time) => {
                 try {
-                    const newImage = await WeatherLayers.loadTextureData(newImageUrl, false);
+                    const newImage = await WeatherLayers.loadTextureData(`data-copy/${model}-${member}-${altitude}-${time}-wind.png`, false);
                     image = newImage;
+                    const newHflImage = await WeatherLayers.loadTextureData(`data-copy/hfl-${altitude}.tif`, false);
+                    hflImage = newHflImage;
                 }
                 catch (err) {
+                    console.log('error', err)
                     image = undefined;
                     deckLayer.setProps({ layers: [] });
                     updateMarker();
@@ -270,19 +288,6 @@
                     [1.852 * 40, [229, 140, 61]],
                     [1.852 * 45, [219, 124, 61]],
                 ];
-                // const paletteWindy = [
-                //     [0,  [98, 113, 183]],
-                //     [4,  [57, 97, 159]],
-                //     [11, [74, 148, 169]],
-                //     [18, [77, 141, 123]],
-                //     [25, [83, 165, 83]],
-                //     [32, [53, 159, 53]],
-                //     [40, [167, 157, 81]],
-                //     [47, [159, 127, 58]],
-                //     [54, [161, 108, 92]],
-                //     [61, [129, 58, 78]],
-                //     [68, [175, 80, 136]],
-                // ];
                 const beforeId = 'water-lake';
                 deckLayer.setProps({
                     layers: [
@@ -350,7 +355,11 @@
             async function initControls() {
 
                 const models = ['CH1', 'CH2'];
-                const altitudeSteps = Array.from({ length: (3000 - 600) / 50 + 1 }, (_, i) => (600 + i * 50) + 'M');
+                // const altitudeSteps = Array.from({ length: (3000 - 600) / 50 + 1 }, (_, i) => (600 + i * 50) + 'M');
+                const altitudeSteps = [];
+                for (let z = 1; z <= 80; ++z) {
+                    altitudeSteps.push(`Z${z}`)
+                }
                 // altitudeSteps.unshift('GND');
                 const members = ['CTRL', ...Array.from({ length: 11 }, (_, i) => `EPS${i}`)];
                 const currentHour = Math.floor(Date.now() / 3600000) * 3600;
@@ -358,7 +367,10 @@
                 const response = await fetch('data-copy/last_run.json'); // Update this path
                 const data = await response.json();
                 const lastRunTimestamp = data.last_run;
-                const times = Array.from({ length: 31 }, (_, i) => lastRunTimestamp + i * 3600);
+                const times = []; //Array.from({ length: 31 }, (_, i) => lastRunTimestamp + i * 3600);
+                for (let i = 0; i <= 33; i++) {
+                    times.push(lastRunTimestamp + i * 3600);
+                }
 
                 const selectIds = {
                     // model: 'modelSelect',
@@ -388,7 +400,7 @@
                         const opt = document.createElement('option');
                         opt.value = v;
                         opt.textContent = (id === 'timeSelect') ? formatCustomTime(v) : v;
-                        if (id === 'altitudeSelect' && v === '1500M') {
+                        if (id === 'altitudeSelect' && v === 'Z77') {
                             opt.selected = true;
                         }
                         sel.appendChild(opt);
@@ -402,7 +414,7 @@
                     const time = document.getElementById('timeSelect').value;
                     const altitude = document.getElementById('altitudeSelect').value;
                     const member = 'CTRL'; // document.getElementById('memberSelect').value;
-                    await updateLayers(`data-copy/${model}-${member}-${altitude}-${time}-wind.png`);
+                    await updateLayers(model, member, altitude, time);
                 }
 
                 function prev(type) {
