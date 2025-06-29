@@ -267,8 +267,8 @@ if __name__ == "__main__":
             continue
         
         print(f'Found new run {reference_datetime}...')
-        # delete_all_files_in_folder(cache_path)
-        # delete_all_files_in_folder(data_path)
+        delete_all_files_in_folder(cache_path)
+        delete_all_files_in_folder(data_path)
         
         horizons = get_horizons(model)
 
