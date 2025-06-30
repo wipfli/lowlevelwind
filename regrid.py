@@ -392,7 +392,7 @@ def regrid(
     return xr.DataArray(data, attrs=attrs)
 
 
-def _icon2regular(
+def icon2regular(
     field: xr.DataArray, dst: RegularGrid, indices: np.ndarray, weights: np.ndarray
 ) -> xr.DataArray:
     mask = np.all(indices != 0, axis=-1)
@@ -454,7 +454,7 @@ def icon2geolatlon(field: xr.DataArray) -> xr.DataArray:
         ymax=coeffs.ymax,
     )
 
-    return _icon2regular(field, dst, indices, weights)
+    return icon2regular(field, dst, indices, weights)
 
 
 def icon2rotlatlon(field: xr.DataArray) -> xr.DataArray:
@@ -494,7 +494,7 @@ def icon2rotlatlon(field: xr.DataArray) -> xr.DataArray:
         ymax=coeffs.ymax,
     )
 
-    return _icon2regular(field, dst, indices, weights)
+    return icon2regular(field, dst, indices, weights)
 
 
 def _linear_weights(pts_src: ArrayLike, pts_dst: ArrayLike) -> tuple[NDArray, NDArray]:
@@ -583,6 +583,31 @@ def iconremap(
     transformer_geo = Transformer.from_crs(dst.crs.wkt, "epsg:4326", always_xy=True)
     lon, lat = transformer_geo.transform(gx, gy)
 
-    return _icon2regular(field, dst, indices, weights).assign_coords(
+    return icon2regular(field, dst, indices, weights).assign_coords(
         lon=(("y", "x"), lon), lat=(("y", "x"), lat)
     )
+
+def iconremap_delauny(
+    field: xr.DataArray, dst: RegularGrid, method: Literal["byc"] = "byc"
+) -> xr.DataArray:
+    if method not in {"byc"}:
+        raise NotImplementedError(f"method: {method} is not implemented")
+
+    utm_crs = "epsg:32632"  # UTM zone 32N
+
+    transformer_src = Transformer.from_crs("epsg:4326", utm_crs, always_xy=True)
+    points_src = transformer_src.transform(field.lon, field.lat)
+
+    gx, gy = np.meshgrid(dst.x, dst.y)
+    transformer_dst = Transformer.from_crs(dst.crs.wkt, utm_crs, always_xy=True)
+    points_dst = transformer_dst.transform(gx.flat, gy.flat)
+
+    xy = np.array(points_src).T
+    uv = np.array(points_dst).T
+
+    indices, weights = _linear_weights_cropped_domain(xy, uv)
+
+    transformer_geo = Transformer.from_crs(dst.crs.wkt, "epsg:4326", always_xy=True)
+    lon, lat = transformer_geo.transform(gx, gy)
+
+    return indices, weights, lon, lat

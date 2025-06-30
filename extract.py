@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from meteodatalab import ogd_api
-from meteodatalab.operators import regrid
+import regrid
 from meteodatalab import grib_decoder, data_source
 from meteodatalab.operators.destagger import destagger
 
@@ -126,7 +126,7 @@ def save_geotiff(da, filename):
     ) as dst:
         dst.write(da.values[::-1, :].astype(np.float32), 1)
 
-def reproject(da):
+def get_delauny(da):
     xmin = 5.379264
     xmax = 11.024297
     ymin = 45.497280
@@ -138,7 +138,12 @@ def reproject(da):
     destination = regrid.RegularGrid(
         CRS.from_string("epsg:4326"), nx, ny, xmin, xmax, ymin, ymax
     )
-    return regrid.iconremap(da, destination).squeeze()
+    return (destination,) + regrid.iconremap_delauny(da, destination)
+
+def reproject_with_delauny(da, destination, indices, weights, lon, lat):
+    return regrid.icon2regular(da, destination, indices, weights).assign_coords(
+        lon=(("y", "x"), lon), lat=(("y", "x"), lat)
+    ).squeeze()
 
 def get_filename(model, variable, reference_datetime, perturbed, horizon):
     return f'icon-{model}-eps-{get_timestring(reference_datetime)}-{get_horizon_hours(horizon)}-{variable.lower()}-{"ctrl" if not perturbed else eps}.grib2'
@@ -182,12 +187,31 @@ def read(model, variable, reference_datetime, perturbed, horizon, eps, z):
 
 def make_horizon(reference_datetime, horizon, model, perturbed, eps):
     os.makedirs(data_path, exist_ok=True)
+
+    destination_U = None
+    indices_U = None
+    weights_U = None
+    lon_U = None
+    lat_U = None
+
+    destination_V = None
+    indices_V = None
+    weights_V = None
+    lon_V = None
+    lat_V = None
+
     for z in z_values:
         print(f'Working on horizon={get_horizon_hours(horizon)}, z={z}...')
         da_U = read(model, 'U', reference_datetime, perturbed, horizon, eps, z)
         da_V = read(model, 'V', reference_datetime, perturbed, horizon, eps, z)
-        f_U = reproject(da_U)
-        f_V = reproject(da_V)
+
+        if destination_U is None:
+            destination_U, indices_U, weights_U, lon_U, lat_U = get_delauny(da_U)
+            destination_V, indices_V, weights_V, lon_V, lat_V = get_delauny(da_V)
+
+        f_U = reproject_with_delauny(da_U, destination_U, indices_U, weights_U, lon_U, lat_U)
+        f_V = reproject_with_delauny(da_V, destination_V, indices_V, weights_V, lon_V, lat_V)
+
         member_filename = f'EPS{eps}' if perturbed else 'CTRL'
         model_filename = model.upper()
         z_filename = f'Z{z}'
@@ -204,8 +228,16 @@ def make_height_fields():
     hfl = destagger(ds["HHL"].squeeze(drop=True), "z")
     
     os.makedirs(data_path, exist_ok=True)
+    
+    destination = None
+    indices = None
+    weights = None
+    lon = None
+    lat = None
     for z in z_values:
-        projected = reproject(hfl.sel(z=z))
+        if destination is None:
+            destination, indices, weights, lon, lat = get_delauny(hfl.sel(z=z))
+        projected = reproject_with_delauny(hfl.sel(z=z), destination, indices, weights, lon, lat)
         save_geotiff(projected, f'{data_path}/hfl-Z{z}.tif')
 
 def delete_all_files_in_folder(folder):
@@ -267,7 +299,6 @@ if __name__ == "__main__":
             continue
         
         print(f'Found new run {reference_datetime}...')
-        delete_all_files_in_folder(cache_path)
         delete_all_files_in_folder(data_path)
         
         horizons = get_horizons(model)
@@ -276,8 +307,8 @@ if __name__ == "__main__":
             download(model, 'U', reference_datetime, perturbed, horizon)
             download(model, 'V', reference_datetime, perturbed, horizon)
 
-        # print('Make height fields...')
-        # make_height_fields()
+        print('Make height fields...')
+        make_height_fields()
 
         num_threads = 8
         print(f"Starting parallel tasks with {num_threads} threads...")
@@ -295,5 +326,6 @@ if __name__ == "__main__":
         with open('data/last_run.json', 'w') as f:
             json.dump({"last_run": latest_available_run}, f)
         copy_all_files(data_path, data_copy_path)
+        delete_all_files_in_folder(cache_path)
 
         print(f'Finished in {(time.time() - tic) / 60:.2f} min')
