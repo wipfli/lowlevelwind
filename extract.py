@@ -45,7 +45,7 @@ def get_latest_reference_datetime(model, variable, perturbed, horizon):
     )
     try:
         urls = ogd_api.get_asset_urls(r)
-    except (requests.exceptions.JSONDecodeError, requests.exceptions.ConnectionError) as e:
+    except (requests.exceptions.JSONDecodeError, requests.exceptions.ConnectionError, requests.exceptions.HTTPError) as e:
         failed_api_calls += 1
         return None
     successful_api_calls += 1
